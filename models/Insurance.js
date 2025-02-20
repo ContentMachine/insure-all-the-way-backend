@@ -7,9 +7,17 @@ const options = {
 
 const InsurancePolicySchema = new mongoose.Schema(
   {
-    policyNumber: { type: String, required: true },
-    effectiveDate: { type: Date, required: true },
-    expirationDate: { type: Date, required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
+      required: true,
+    },
+    createdAt: { type: Date, default: Date.now },
   },
+
   options
 );
+
+module.exports = {
+  InsurancePolicy: mongoose.model("InsurancePolicy", InsurancePolicySchema),
+};

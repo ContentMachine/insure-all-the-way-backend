@@ -76,7 +76,7 @@ router.post("/sign-in", async (req, res) => {
       return res.status(403).json({ message: "Reset your password first" });
     }
 
-    const token = jwt.sign({ userId: user?._id }, "insure-all-the-way");
+    const token = jwt.sign({ userId: user?._id }, process.env.EMAIL_PASS);
 
     res.json({ token });
   } catch (err) {

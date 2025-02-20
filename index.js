@@ -4,6 +4,8 @@ const cors = require("cors");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
+const policiesRoutes = require("./routes/policies");
+const scraper = require("./routes/scraper");
 
 // Mongo DB
 mongoose
@@ -28,6 +30,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/policies", policiesRoutes);
+app.use("/api/scrape", scraper);
 
 // Start server
 app.listen(PORT, () => {
