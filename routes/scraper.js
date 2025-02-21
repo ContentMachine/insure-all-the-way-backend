@@ -19,7 +19,7 @@ router.post("/ask-niid", async (req, res) => {
     });
 
     page.setDefaultTimeout(60000);
-    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultNavigationTimeout(30000);
 
     await page.waitForSelector("#ContentPlaceHolder1_drpOption");
     await page.select("#ContentPlaceHolder1_drpOption", "Single");
@@ -33,7 +33,7 @@ router.post("/ask-niid", async (req, res) => {
     await page.click("#ContentPlaceHolder1_btnSearch");
 
     await page.waitForSelector("#ContentPlaceHolder1_TB_FleetPolicy", {
-      timeout: 60000,
+      timeout: 30000,
     });
 
     // Extract data from the table

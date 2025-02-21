@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const { Users } = require("../models/Users");
 const sendEmail = require("../utils/email");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../middleware/auth");
 
 router.post("/sign-up", async (req, res) => {
   try {
@@ -67,20 +68,31 @@ router.post("/sign-in", async (req, res) => {
   try {
     const user = await Users.findOne({ email });
 
-    if (!user) return res.status(404).json({ error: "user not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user?.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
     if (user.firstLogin) {
-      return res.status(403).json({ message: "Reset your password first" });
+      return res.status(403).json({ message: "Please Reset your password" });
     }
 
     const token = jwt.sign({ userId: user?._id }, process.env.EMAIL_PASS);
 
-    res.json({ token });
+    res.json({
+      token,
+      user: {
+        email: user?.email,
+        firstName: user?.firdtName,
+        lastName: user?.lastName,
+        phone: user?.phone,
+        firstLogin: user?.firstLogin,
+        address: user?.address,
+        state: user?.state,
+      },
+    });
   } catch (err) {
-    res.status(500).json({ error: "Login error." });
+    res.status(500).json({ error: `Login error: ${err}` });
   }
 });
 
@@ -98,9 +110,24 @@ router.post("/reset-password", async (req, res) => {
 
     await user.save();
 
-    res.json({ message: "Passsword Reset Successful. You can now login" });
+    res.json({
+      message: "Passsword Reset Successful. Please login with new credentials",
+    });
   } catch (error) {
     res.status(500).json({ error: `Error reseting Password: ${error}` });
+  }
+});
+
+router.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error("Error retrieving user info:", error);
+    res.status(500).json({ error: `Error retrieving user info:${error}` });
   }
 });
 

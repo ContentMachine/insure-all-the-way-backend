@@ -34,7 +34,6 @@ router.post(
       state,
       registrationNumber,
       chasisNumber,
-      vehicleNumber,
       roadWorthiness,
       plan,
       makeOfVehicle,
@@ -94,7 +93,6 @@ router.post(
             user: user._id,
             registrationNumber,
             chasisNumber,
-            vehicleNumber,
             roadWorthiness,
             plan,
           });

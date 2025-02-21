@@ -4,7 +4,6 @@ const { InsurancePolicy } = require("../models/Insurance");
 const ThirdPartyPolicySchema = new mongoose.Schema({
   registrationNumber: { type: String, required: true },
   chasisNumber: { type: String, required: true },
-  vehicleNumber: { type: String, required: true },
   roadWorthiness: { type: String, required: true },
   plan: { type: String, required: true },
 });
