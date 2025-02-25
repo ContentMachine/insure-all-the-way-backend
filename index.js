@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const policiesRoutes = require("./routes/policies");
 const scraper = require("./routes/scraper");
+const externals = require("./routes/external");
 
 // Mongo DB
 mongoose
@@ -32,6 +33,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/policies", policiesRoutes);
 app.use("/api/scrape", scraper);
+app.use("/api/externals", externals);
 
 // Start server
 app.listen(PORT, () => {

@@ -16,6 +16,8 @@ const cloudinary = require("../config/cloudinary");
 const upload = multer({ storage: multer.memoryStorage() });
 const { insurances } = require("../data/insurance");
 const { capitalizeEachWord } = require("../helpers/capitalize");
+const { InsurancePolicy, InsuranceClaims } = require("../models/Insurance");
+const axios = require("axios");
 
 router.post(
   "/policy/:type/:subType",
@@ -95,6 +97,9 @@ router.post(
             chasisNumber,
             roadWorthiness,
             plan,
+            status: "active",
+            startDate,
+            endDate,
           });
 
           await insurancePolicy.save();
@@ -138,6 +143,7 @@ router.post(
             proofOfOwnership: proofResult.secure_url,
             id: idResult.secure_url,
             plan,
+            status: "active",
           });
 
           await insurancePolicy.save();
@@ -148,6 +154,7 @@ router.post(
             premium,
             startDate,
             endDate,
+            status: "active",
           });
 
           await insurancePolicy.save();
@@ -158,6 +165,7 @@ router.post(
             comments,
             startDate,
             endDate,
+            status: "active",
           });
 
           await insurancePolicy.save();
@@ -236,6 +244,98 @@ router.get("/policy/:type/:subType", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: `Error getting insurance type: ${error}` });
+  }
+});
+
+router.get("/user/policy", authMiddleware, async (req, res) => {
+  try {
+    const policies = await InsurancePolicy.find({ user: req.user.userId });
+    res.status(200).json({ policies });
+  } catch (error) {
+    console.error("Error retrieving user policies:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while retrieving policies" });
+  }
+});
+
+router.get("/user/policy/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const user = req.user?.userId;
+
+  try {
+    const policy = await InsurancePolicy.findOne({ _id: id, user });
+
+    res.status(200).json({ policy });
+  } catch (error) {
+    console.error("Error retrieving policy details:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while retrieving policies" });
+  }
+});
+
+router.get("/user/summary", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const user = req.user?.userId;
+
+  try {
+    const policy = await InsurancePolicy.find({ user });
+    const today = new Date();
+    const policiesHeld = policy.length;
+    const policiesOverdue = policy.filter((data) => {
+      const date = new Date(data?.endDate);
+      const differenceInMs = date - today;
+      const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
+
+      return differenceInDays < 1;
+    }).length;
+    const pendingPolicies = policy?.filter((data) => {
+      return data?.status === "pending";
+    }).length;
+
+    res.status(200).json({ policiesHeld, policiesOverdue, pendingPolicies });
+  } catch (error) {
+    console.error("Error retrieving policy stats:", error);
+    res.status(500).json({
+      error: "An error occurred while retrieving policies statistics",
+    });
+  }
+});
+
+router.post("/policy/claim", authMiddleware, async (req, res) => {
+  try {
+    const {
+      insuranceId,
+      vehicleRegistrationNumber,
+      dateAndTime,
+      location,
+      narration,
+    } = req.body;
+
+    if (!insuranceId || !dateAndTime || !narration) {
+      return res.status(400).json({
+        message: "Either Insurance id or Date and Time or Narration is missing",
+      });
+    }
+
+    const insuranceClaims = new InsuranceClaims({
+      insuranceId,
+      vehicleRegistrationNumber,
+      dateAndTime,
+      location,
+      narration,
+    });
+
+    await insuranceClaims.save();
+
+    return res
+      .status(200)
+      .json({ message: "Policy claim was made successfully" });
+  } catch (error) {
+    res.status(500).json({
+      error: `There was an error making a claim for this policy: ${error}`,
+    });
   }
 });
 

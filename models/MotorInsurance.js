@@ -6,6 +6,9 @@ const ThirdPartyPolicySchema = new mongoose.Schema({
   chasisNumber: { type: String, required: true },
   roadWorthiness: { type: String, required: true },
   plan: { type: String, required: true },
+  startDate: { type: String, required: true },
+  endDate: { type: String, required: true },
+  status: { type: String, default: "active" },
 });
 
 const EnhancedThirdPartyPolicySchema = new mongoose.Schema({
@@ -22,6 +25,12 @@ const EnhancedThirdPartyPolicySchema = new mongoose.Schema({
   proofOfOwnership: { type: String, required: true },
   id: { type: String, required: true },
   plan: { type: String, required: true },
+  status: { type: String, default: "active" },
+  inspectionState: { type: String, required: true },
+  inspectionAddress: { type: String, required: true },
+  dateForInspection: { type: String, required: true },
+  contactName: { type: String, required: true },
+  contactPhone: { type: String, required: true },
 });
 
 const ComprehensivePolicySchema = new mongoose.Schema({
@@ -29,6 +38,7 @@ const ComprehensivePolicySchema = new mongoose.Schema({
   premium: { type: String, required: true },
   startDate: { type: String, required: true },
   endDate: { type: String, required: true },
+  status: { type: String, default: "active" },
 });
 
 const FleetPolicySchema = new mongoose.Schema({
@@ -36,6 +46,7 @@ const FleetPolicySchema = new mongoose.Schema({
   comments: { type: String, required: true },
   startDate: { type: String, required: true },
   endDate: { type: String, required: true },
+  status: { type: String, default: "active" },
 });
 
 const ThirdPartyPolicy = InsurancePolicy.discriminator(

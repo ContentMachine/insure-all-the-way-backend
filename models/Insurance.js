@@ -18,6 +18,15 @@ const InsurancePolicySchema = new mongoose.Schema(
   options
 );
 
+const InsuranceClaimsSchema = new mongoose.Schema({
+  insuranceId: { type: String, required: true },
+  vehicleRegistrationNumber: { type: String },
+  dateAndTime: { type: String, required: true },
+  location: { type: String, required: true },
+  narration: { type: String, required: true },
+});
+
 module.exports = {
   InsurancePolicy: mongoose.model("InsurancePolicy", InsurancePolicySchema),
+  InsuranceClaims: mongoose.model("InsuranceClaims", InsuranceClaimsSchema),
 };

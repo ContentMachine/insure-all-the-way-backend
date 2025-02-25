@@ -83,7 +83,7 @@ router.post("/sign-in", async (req, res) => {
       token,
       user: {
         email: user?.email,
-        firstName: user?.firdtName,
+        firstName: user?.firstName,
         lastName: user?.lastName,
         phone: user?.phone,
         firstLogin: user?.firstLogin,
