@@ -1,8 +1,8 @@
-export const capitalize = (data) => {
+const capitalize = (data) => {
   if (data) return `${data?.charAt(0)?.toUpperCase()}${data?.slice(1)}`;
 };
 
-export const capitalizeEachWord = (text) => {
+const capitalizeEachWord = (text) => {
   const destructuredStringArray = text.split(" ");
   const capitalizedString = [];
 
@@ -12,3 +12,5 @@ export const capitalizeEachWord = (text) => {
 
   return capitalizedString.join(" ");
 };
+
+module.exports = { capitalize, capitalizeEachWord };

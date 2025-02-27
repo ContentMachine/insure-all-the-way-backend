@@ -39,6 +39,7 @@ const ComprehensivePolicySchema = new mongoose.Schema({
   startDate: { type: String, required: true },
   endDate: { type: String, required: true },
   status: { type: String, default: "active" },
+  registrationNumber: { type: String, required: true },
 });
 
 const FleetPolicySchema = new mongoose.Schema({

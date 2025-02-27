@@ -50,6 +50,11 @@ router.post(
       premium,
       propertyType,
       comments,
+      inspectionState,
+      inspectionAddress,
+      dateForInspection,
+      contactName,
+      contactPhone,
     } = req.body;
 
     try {
@@ -144,6 +149,11 @@ router.post(
             id: idResult.secure_url,
             plan,
             status: "active",
+            inspectionState,
+            inspectionAddress,
+            dateForInspection,
+            contactName,
+            contactPhone,
           });
 
           await insurancePolicy.save();
@@ -154,6 +164,7 @@ router.post(
             premium,
             startDate,
             endDate,
+            registrationNumber,
             status: "active",
           });
 
@@ -165,7 +176,7 @@ router.post(
             comments,
             startDate,
             endDate,
-            status: "active",
+            status: "pending",
           });
 
           await insurancePolicy.save();
