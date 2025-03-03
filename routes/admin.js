@@ -215,8 +215,23 @@ router.patch(
 
 router.get("/policies", verifyToken, isAdmin, async (req, res) => {
   try {
-    const policies = await InsurancePolicy.find({}).populate("user");
-    return res.status(200).json({ policies });
+    const policies = await InsurancePolicy.find({})
+      .populate("user")
+      .sort({ endDate: 1 });
+
+    const today = new Date();
+    const policiesWithDaysLeft = policies.map((policy) => {
+      const endDate = new Date(policy.endDate);
+      const diffTime = endDate - today;
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return {
+        ...policy.toObject(),
+        daysLeft,
+      };
+    });
+
+    return res.status(200).json({ policies: policiesWithDaysLeft });
   } catch (error) {
     return res
       .status(500)
@@ -248,9 +263,22 @@ router.get("/policies/policy/stats", verifyToken, isAdmin, async (req, res) => {
       (data) => data?.status === "active"
     )?.length;
 
-    return res
-      .status(200)
-      .json({ policiesLength, pendingPolicies, activePolicies });
+    const today = new Date();
+
+    const expiredPolicies = policies?.filter((policy) => {
+      const endDate = new Date(policy.endDate);
+      const diffTime = endDate - today;
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return daysLeft < 1;
+    })?.length;
+
+    return res.status(200).json({
+      policiesLength,
+      pendingPolicies,
+      activePolicies,
+      expiredPolicies,
+    });
   } catch (error) {
     return res
       .status(500)

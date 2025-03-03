@@ -23,6 +23,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const { insurances } = require("../data/insurance");
 const { capitalizeEachWord } = require("../helpers/capitalize");
 const { InsurancePolicy, InsuranceClaims } = require("../models/Insurance");
+const { CorporateAndGroupHmo } = require("../models/HealthInsurance");
 const axios = require("axios");
 
 router.post(
@@ -66,6 +67,8 @@ router.post(
       deviceType,
       valueOfDevice,
       quantityOfDevice,
+      nameOfOrganization,
+      numberOfPeopleInOrganization,
     } = req.body;
 
     try {
@@ -251,6 +254,25 @@ router.post(
             endDate,
             startDate,
             premium,
+            status: "pending",
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
+          });
+
+          await insurancePolicy.save();
+        }
+      } else if (type === "health-insurance") {
+        if (subType === "corporate-and-group-hmo") {
+          const insurancePolicy = new CorporateAndGroupHmo({
+            user: user?._id,
+            nameOfOrganization,
+            numberOfPeopleInOrganization,
+            comments,
+            startDate,
+            endDate,
             status: "pending",
             agent: {
               id: randomAgent._id,
