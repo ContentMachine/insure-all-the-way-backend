@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require("../middleware/auth");
+const { verifyToken } = require("../middleware/auth");
 const multer = require("multer");
 const {
   ThirdPartyPolicy,
@@ -8,7 +8,13 @@ const {
   FleetPolicy,
   ComprehensivePolicy,
 } = require("../models/MotorInsurance");
+const {
+  BuildingPolicy,
+  AllRiskPolicy,
+  AllRisksPolicy,
+} = require("../models/PropertyInsurance");
 const { Users } = require("../models/Users");
+const Agent = require("../models/Agent");
 const sendEmail = require("../utils/email");
 const bcrypt = require("bcrypt");
 const streamifier = require("streamifier");
@@ -55,6 +61,11 @@ router.post(
       dateForInspection,
       contactName,
       contactPhone,
+      locationOfProperty,
+      valueOfProperty,
+      deviceType,
+      valueOfDevice,
+      quantityOfDevice,
     } = req.body;
 
     try {
@@ -94,6 +105,15 @@ router.post(
         );
       }
 
+      // Randomly select an agent using aggregation
+      const randomAgentResult = await Agent.aggregate([
+        { $sample: { size: 1 } },
+      ]);
+      if (!randomAgentResult.length) {
+        return res.status(404).json({ error: "No agents found" });
+      }
+      const randomAgent = randomAgentResult[0];
+
       if (type === "motor-insurance") {
         if (subType === "third-party-motor-insurance") {
           const insurancePolicy = new ThirdPartyPolicy({
@@ -105,6 +125,11 @@ router.post(
             status: "active",
             startDate,
             endDate,
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
           });
 
           await insurancePolicy.save();
@@ -154,6 +179,11 @@ router.post(
             dateForInspection,
             contactName,
             contactPhone,
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
           });
 
           await insurancePolicy.save();
@@ -166,6 +196,11 @@ router.post(
             endDate,
             registrationNumber,
             status: "active",
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
           });
 
           await insurancePolicy.save();
@@ -177,6 +212,11 @@ router.post(
             startDate,
             endDate,
             status: "pending",
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
           });
 
           await insurancePolicy.save();
@@ -184,6 +224,42 @@ router.post(
           return res.status(400).json({
             error: `This insurance type does not exist under ${type}`,
           });
+        }
+      } else if (type === "property-insurance") {
+        if (subType === "building") {
+          const insurancePolicy = new BuildingPolicy({
+            user: user?._id,
+            locationOfProperty,
+            valueOfProperty,
+            startDate,
+            endDate,
+            status: "pending",
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
+          });
+
+          await insurancePolicy.save();
+        } else if (subType === "all-risk") {
+          const insurancePolicy = new AllRisksPolicy({
+            user: user?._id,
+            deviceType,
+            valueOfDevice,
+            quantityOfDevice,
+            endDate,
+            startDate,
+            premium,
+            status: "pending",
+            agent: {
+              id: randomAgent._id,
+              name: randomAgent.name,
+              phoneNumber: randomAgent.phoneNumber,
+            },
+          });
+
+          await insurancePolicy.save();
         }
       }
 
@@ -258,9 +334,12 @@ router.get("/policy/:type/:subType", async (req, res) => {
   }
 });
 
-router.get("/user/policy", authMiddleware, async (req, res) => {
+router.get("/user/policy", verifyToken, async (req, res) => {
   try {
-    const policies = await InsurancePolicy.find({ user: req.user.userId });
+    const policies = await InsurancePolicy.find({
+      user: req.user.userId,
+      status: "active",
+    });
     res.status(200).json({ policies });
   } catch (error) {
     console.error("Error retrieving user policies:", error);
@@ -270,12 +349,16 @@ router.get("/user/policy", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/user/policy/:id", authMiddleware, async (req, res) => {
+router.get("/user/policy/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const user = req.user?.userId;
 
   try {
-    const policy = await InsurancePolicy.findOne({ _id: id, user });
+    const policy = await InsurancePolicy.findOne({
+      _id: id,
+      user,
+      status: "active",
+    });
 
     res.status(200).json({ policy });
   } catch (error) {
@@ -286,12 +369,12 @@ router.get("/user/policy/:id", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/user/summary", authMiddleware, async (req, res) => {
+router.get("/user/summary", verifyToken, async (req, res) => {
   const { id } = req.params;
   const user = req.user?.userId;
 
   try {
-    const policy = await InsurancePolicy.find({ user });
+    const policy = await InsurancePolicy.find({ user, status: "active" });
     const today = new Date();
     const policiesHeld = policy.length;
     const policiesOverdue = policy.filter((data) => {
@@ -314,7 +397,9 @@ router.get("/user/summary", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/policy/claim", authMiddleware, async (req, res) => {
+router.post("/policy/claim", verifyToken, async (req, res) => {
+  const user = req.user?.userId;
+
   try {
     const {
       insuranceId,
@@ -336,6 +421,8 @@ router.post("/policy/claim", authMiddleware, async (req, res) => {
       dateAndTime,
       location,
       narration,
+      status: "unresolved",
+      user,
     });
 
     await insuranceClaims.save();

@@ -6,8 +6,8 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const policiesRoutes = require("./routes/policies");
 const scraper = require("./routes/scraper");
+const admin = require("./routes/admin");
 const externals = require("./routes/external");
-
 // Mongo DB
 mongoose
   .connect(process.env.MONGO_DB_CONNECTION_URI, {
@@ -53,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/policies", policiesRoutes);
 app.use("/api/scrape", scraper);
 app.use("/api/externals", externals);
+app.use("/api/admin", admin);
 
 // Start server
 app.listen(PORT, () => {

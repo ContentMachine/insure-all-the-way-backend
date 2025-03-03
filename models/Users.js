@@ -10,6 +10,8 @@ const UserSchema = new mongoose.Schema({
   address: { type: String, required: true },
   state: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
+  role: { type: String, default: "user" },
+  status: { type: String, default: "active" },
 });
 
 module.exports = {

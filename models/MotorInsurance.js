@@ -40,6 +40,7 @@ const ComprehensivePolicySchema = new mongoose.Schema({
   endDate: { type: String, required: true },
   status: { type: String, default: "active" },
   registrationNumber: { type: String, required: true },
+  isTrackerInstalled: { type: String, default: false },
 });
 
 const FleetPolicySchema = new mongoose.Schema({
@@ -47,7 +48,7 @@ const FleetPolicySchema = new mongoose.Schema({
   comments: { type: String, required: true },
   startDate: { type: String, required: true },
   endDate: { type: String, required: true },
-  status: { type: String, default: "active" },
+  status: { type: String, default: "pending" },
 });
 
 const ThirdPartyPolicy = InsurancePolicy.discriminator(

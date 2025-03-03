@@ -13,17 +13,32 @@ const InsurancePolicySchema = new mongoose.Schema(
       required: true,
     },
     createdAt: { type: Date, default: Date.now },
+    agent: {
+      id: { type: mongoose.Schema.Types.ObjectId, required: true },
+      name: { type: String, required: true },
+      phoneNumber: { type: String, required: true },
+    },
   },
 
   options
 );
 
 const InsuranceClaimsSchema = new mongoose.Schema({
-  insuranceId: { type: String, required: true },
+  insuranceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "InsurancePolicy",
+  },
   vehicleRegistrationNumber: { type: String },
   dateAndTime: { type: String, required: true },
   location: { type: String, required: true },
   narration: { type: String, required: true },
+  status: { type: String, default: "unresolved" },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Users",
+    required: true,
+  },
 });
 
 module.exports = {

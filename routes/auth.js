@@ -4,13 +4,22 @@ const bcrypt = require("bcrypt");
 const { Users } = require("../models/Users");
 const sendEmail = require("../utils/email");
 const jwt = require("jsonwebtoken");
-const authMiddleware = require("../middleware/auth");
+const { verifyToken } = require("../middleware/auth");
 
 router.post("/sign-up", async (req, res) => {
   try {
-    const { email, firstName, lastName, phone, address, state } = req.body;
+    const { email, firstName, lastName, phone, address, state, role } =
+      req.body;
 
-    if (!email || !firstName || !lastName || !phone || !address || !state) {
+    if (
+      !email ||
+      !firstName ||
+      !lastName ||
+      !phone ||
+      !address ||
+      !state ||
+      !role
+    ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -35,6 +44,7 @@ router.post("/sign-up", async (req, res) => {
       phone,
       address,
       state,
+      role,
     });
 
     await newUser.save();
@@ -53,7 +63,7 @@ Please make sure to log in and reset your pasword
       emailText
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Account created. Check your email for your login details",
     });
   } catch (err) {
@@ -70,6 +80,10 @@ router.post("/sign-in", async (req, res) => {
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    if (user.status !== "active") {
+      return res.status(401).json({ error: "Account is not active" });
+    }
+
     const isMatch = await bcrypt.compare(password, user?.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
@@ -77,7 +91,10 @@ router.post("/sign-in", async (req, res) => {
       return res.status(403).json({ message: "Please Reset your password" });
     }
 
-    const token = jwt.sign({ userId: user?._id }, process.env.EMAIL_PASS);
+    const token = jwt.sign(
+      { userId: user?._id, role: user.role },
+      process.env.EMAIL_PASS
+    );
 
     res.json({
       token,
@@ -118,7 +135,7 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-router.get("/profile", authMiddleware, async (req, res) => {
+router.get("/profile", verifyToken, async (req, res) => {
   try {
     const user = await Users.findById(req.user.userId).select("-password");
     if (!user) {
