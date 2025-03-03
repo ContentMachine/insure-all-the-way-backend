@@ -63,7 +63,7 @@ Hi ${firstName},
 
 We’re excited to inform you that your new admin account has been successfully created! You now have access to our secure admin portal, where you can manage settings, monitor activities, and oversee various administrative tasks.
 
-To get started, please sign in using the following link: https://volfgng.xyz
+To get started, please sign in using the following link: https://insure-all-the-way-admin-frontend.vercel.app/
 
 Should you have any questions or need assistance, feel free to reach out to our support team at info@insurealltheway.com.
 

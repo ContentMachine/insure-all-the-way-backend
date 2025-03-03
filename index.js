@@ -25,6 +25,7 @@ app.use(function (req, res, next) {
     "http://localhost:3000",
     "http://localhost:3001",
     "https://insure-all-the-way-frontend.vercel.app",
+    "https://insure-all-the-way-admin-frontend.vercel.app",
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
