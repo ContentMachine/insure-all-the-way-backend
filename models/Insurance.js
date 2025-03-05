@@ -18,6 +18,7 @@ const InsurancePolicySchema = new mongoose.Schema(
       name: { type: String, required: true },
       phoneNumber: { type: String, required: true },
     },
+    certificate: { type: String, default: "none" },
   },
 
   options

@@ -7,6 +7,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { isAdmin, verifyToken } = require("../middleware/auth");
 const sendEmail = require("../utils/email");
+const multer = require("multer");
+const { uploadFile } = require("../helpers/uploadFile");
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/sign-up", async (req, res) => {
   try {
@@ -384,6 +388,53 @@ router.patch(
       console.error("Error reassigning agent:", error);
       res.status(500).json({
         error: "An error occurred while reassigning the agent.",
+      });
+    }
+  }
+);
+
+router.patch(
+  "/policies/:policyId",
+  upload.fields([{ name: "certificate", maxCount: 1 }]),
+  verifyToken,
+  isAdmin,
+  async (req, res) => {
+    const { policyId } = req.params;
+    const files = req.files;
+
+    try {
+      if (!policyId) {
+        return res.status(400).json({ message: "Policy Id is Missing" });
+      }
+
+      if (!files) {
+        return res.status(400).json({ message: "Please select a valid file" });
+      }
+
+      const [certificate] = await Promise.all([
+        uploadFile(
+          files?.certificate[0].buffer,
+          "insuranceCertificates",
+          "raw"
+        ),
+      ]);
+
+      const policy = await InsurancePolicy.findById(policyId);
+
+      if (!policy) {
+        return res.status(200).json({ error: "Policy not found" });
+      }
+
+      policy.certificate = certificate?.secure_url;
+
+      await policy.save();
+
+      return res
+        .status(200)
+        .json({ message: "Policy Certificate uploaded successfully!", policy });
+    } catch (error) {
+      res.status(500).json({
+        error: `An error occurred while uploading policy certificate: ${error}`,
       });
     }
   }

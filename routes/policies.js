@@ -93,13 +93,17 @@ router.post(
 
         await user.save();
 
-        const emailText = `Welcome, ${firstName}!
-      Your account has been activated. 
+        const emailText = `
+Welcome, ${firstName}!
+
+Your account has been activated. 
       
-      Email: ${email}
-      Default Password: ${defaultPassword}
+Email: ${email}
+Default Password: ${defaultPassword}
       
-      Please make sure to log in and reset your pasword
+Please make sure to log in and reset your pasword, 
+
+Best regards, 
       `;
         await sendEmail(
           email,
