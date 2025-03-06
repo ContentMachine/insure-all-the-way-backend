@@ -13,4 +13,9 @@ const capitalizeEachWord = (text) => {
   return capitalizedString.join(" ");
 };
 
-module.exports = { capitalize, capitalizeEachWord };
+const structureWords = (word) => {
+  const replacedWord = word.replaceAll("-", " ");
+  return capitalizeEachWord(replacedWord);
+};
+
+module.exports = { capitalize, capitalizeEachWord, structureWords };

@@ -21,7 +21,7 @@ const streamifier = require("streamifier");
 const cloudinary = require("../config/cloudinary");
 const upload = multer({ storage: multer.memoryStorage() });
 const { insurances } = require("../data/insurance");
-const { capitalizeEachWord } = require("../helpers/capitalize");
+const { capitalizeEachWord, structureWords } = require("../helpers/capitalize");
 const { InsurancePolicy, InsuranceClaims } = require("../models/Insurance");
 const { CorporateAndGroupHmo } = require("../models/HealthInsurance");
 const axios = require("axios");
@@ -297,6 +297,24 @@ Best regards,
     }
   }
 );
+
+router.get("/policy", async (req, res) => {
+  try {
+    const policies = insurances?.map((data) => structureWords(data?.id));
+
+    if (!policies?.length) {
+      return res
+        .status(400)
+        .json({ error: "No policies available at the moment" });
+    }
+
+    return res.status(200).json({ policies });
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ error: `There was an error reterieving policies" ${error}` });
+  }
+});
 
 router.get("/policy/:type", async (req, res) => {
   try {

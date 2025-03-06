@@ -143,6 +143,24 @@ const insurances = [
       },
     ],
   },
+  {
+    id: "property-insurance",
+    description: null,
+    features: null,
+    price: null,
+    types: [
+      {
+        id: "building",
+        price: null,
+        plans: null,
+      },
+      {
+        id: "all-risk",
+        price: null,
+        plans: null,
+      },
+    ],
+  },
 ];
 
 module.exports = { insurances };

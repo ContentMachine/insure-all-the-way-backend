@@ -9,6 +9,7 @@ const { isAdmin, verifyToken } = require("../middleware/auth");
 const sendEmail = require("../utils/email");
 const multer = require("multer");
 const { uploadFile } = require("../helpers/uploadFile");
+const { insurances } = require("../data/insurance");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -219,10 +220,46 @@ router.patch(
 
 router.get("/policies", verifyToken, isAdmin, async (req, res) => {
   try {
-    const policies = await InsurancePolicy.find({})
+    let policies = await InsurancePolicy.find({})
       .populate("user")
       .sort({ endDate: 1 });
 
+    const { insuranceType, search } = req.query;
+
+    if (insuranceType) {
+      const insuranceMapping = insurances.reduce((acc, insurance) => {
+        const key = insurance.id;
+        acc[key] = insurance.types.map((type) => type.id.toLowerCase());
+        return acc;
+      }, {});
+
+      const typeKey = insuranceType.toLowerCase();
+      const validTypes = insuranceMapping[typeKey];
+
+      if (validTypes) {
+        policies = policies.filter((policy) =>
+          validTypes.includes(policy.insuranceType.toLowerCase())
+        );
+      } else {
+        return res.status(400).json({ error: "Invalid insurance type" });
+      }
+    }
+
+    // Filter by search parameter if provided.
+    if (search) {
+      // Create a regex for a case-insensitive search.
+      const searchRegex = new RegExp(search, "i");
+
+      // Assuming your policy has a property "policyName".
+      // If you need to filter on other fields (like description), include them in the condition.
+      policies = policies.filter(
+        (policy) =>
+          searchRegex.test(policy.policyName) ||
+          (policy.description && searchRegex.test(policy.description))
+      );
+    }
+
+    // Calculate days left for each policy
     const today = new Date();
     const policiesWithDaysLeft = policies.map((policy) => {
       const endDate = new Date(policy.endDate);
@@ -237,9 +274,9 @@ router.get("/policies", verifyToken, isAdmin, async (req, res) => {
 
     return res.status(200).json({ policies: policiesWithDaysLeft });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: `An error occured while getting policies: ${error}` });
+    return res.status(500).json({
+      error: `An error occurred while getting policies: ${error}`,
+    });
   }
 });
 
@@ -257,25 +294,43 @@ router.get("/policies/:id", verifyToken, isAdmin, async (req, res) => {
 
 router.get("/policies/policy/stats", verifyToken, isAdmin, async (req, res) => {
   try {
-    const policies = await InsurancePolicy.find({});
-    const policiesLength = policies?.length;
-    const pendingPolicies = policies?.filter(
-      (data) => data?.status === "pending"
-    )?.length;
+    let policies = await InsurancePolicy.find({});
+    const { insuranceType } = req.query;
 
-    const activePolicies = policies?.filter(
-      (data) => data?.status === "active"
-    )?.length;
+    if (insuranceType) {
+      const insuranceMapping = insurances.reduce((acc, insurance) => {
+        const key = insurance.id;
+        acc[key] = insurance.types.map((type) => type.id.toLowerCase());
+        return acc;
+      }, {});
+
+      const typeKey = insuranceType.toLowerCase();
+      const validTypes = insuranceMapping[typeKey];
+
+      if (validTypes) {
+        policies = policies.filter((policy) =>
+          validTypes.includes(policy.insuranceType.toLowerCase())
+        );
+      } else {
+        return res.status(400).json({ error: "Invalid insurance type" });
+      }
+    }
+
+    const policiesLength = policies.length;
+    const pendingPolicies = policies.filter(
+      (data) => data.status === "pending"
+    ).length;
+    const activePolicies = policies.filter(
+      (data) => data.status === "active"
+    ).length;
 
     const today = new Date();
-
-    const expiredPolicies = policies?.filter((policy) => {
+    const expiredPolicies = policies.filter((policy) => {
       const endDate = new Date(policy.endDate);
       const diffTime = endDate - today;
       const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
       return daysLeft < 1;
-    })?.length;
+    }).length;
 
     return res.status(200).json({
       policiesLength,
@@ -284,9 +339,9 @@ router.get("/policies/policy/stats", verifyToken, isAdmin, async (req, res) => {
       expiredPolicies,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: `An error occured while getting policies: ${error}` });
+    return res.status(500).json({
+      error: `An error occurred while getting policies: ${error}`,
+    });
   }
 });
 
