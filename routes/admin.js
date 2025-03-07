@@ -245,21 +245,25 @@ router.get("/policies", verifyToken, isAdmin, async (req, res) => {
       }
     }
 
-    // Filter by search parameter if provided.
     if (search) {
-      // Create a regex for a case-insensitive search.
-      const searchRegex = new RegExp(search, "i");
+      const searchLower = search.toLowerCase();
+      policies = policies.filter((policy) => {
+        const user = policy.user || {};
+        const firstName = user.firstName ? user.firstName.toLowerCase() : "";
+        const lastName = user.lastName ? user.lastName.toLowerCase() : "";
+        const endDate = policy.endDate
+          ? new Date(policy.endDate).toISOString()
+          : "";
 
-      // Assuming your policy has a property "policyName".
-      // If you need to filter on other fields (like description), include them in the condition.
-      policies = policies.filter(
-        (policy) =>
-          searchRegex.test(policy.policyName) ||
-          (policy.description && searchRegex.test(policy.description))
-      );
+        return (
+          firstName.includes(searchLower) ||
+          lastName.includes(searchLower) ||
+          endDate.includes(searchLower)
+        );
+      });
     }
 
-    // Calculate days left for each policy
+    // Calculate days left for each policy.
     const today = new Date();
     const policiesWithDaysLeft = policies.map((policy) => {
       const endDate = new Date(policy.endDate);
@@ -274,9 +278,9 @@ router.get("/policies", verifyToken, isAdmin, async (req, res) => {
 
     return res.status(200).json({ policies: policiesWithDaysLeft });
   } catch (error) {
-    return res.status(500).json({
-      error: `An error occurred while getting policies: ${error}`,
-    });
+    return res
+      .status(500)
+      .json({ error: `An error occurred while getting policies: ${error}` });
   }
 });
 
