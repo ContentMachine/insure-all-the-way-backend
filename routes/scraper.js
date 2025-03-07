@@ -4,10 +4,6 @@ const puppeteer = require("puppeteer");
 const formatScrappedData = require("../helpers/parseScrappedText");
 const cors = require("cors");
 
-router.options(
-  "/scrape/ask-niid",
-  cors({ origin: "https://insure-all-the-way-frontend.vercel.app" })
-);
 router.post("/ask-niid", async (req, res) => {
   const { policyNumber } = req.body; // Get user input from frontend
 
