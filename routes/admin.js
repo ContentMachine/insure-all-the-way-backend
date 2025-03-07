@@ -87,7 +87,6 @@ Best regards,
       message: "Account created.",
     });
   } catch (err) {
-    console.log("Error", err);
     res.status(500).json({ error: `Error creating user account: ${err}` });
   }
 });
@@ -149,12 +148,30 @@ router.get("/stats", verifyToken, isAdmin, async (req, res) => {
 
 router.get("/users", verifyToken, isAdmin, async (req, res) => {
   try {
-    const users = await Users.find({ role: "user" }).select("-password");
+    const { search } = req.query;
+
+    let users = await Users.find({ role: "user" }).select("-password");
+
+    if (search) {
+      const searchLower = search?.toLowerCase();
+      users = users?.filter((data) => {
+        const firstName = data?.firstName ? data?.firstName?.toLowerCase() : "";
+        const lastName = data?.lastName ? data?.lastName?.toLowerCase() : "";
+        const email = data?.email ? data?.email?.toLowerCase() : "";
+
+        return (
+          firstName.includes(search) ||
+          lastName?.includes(searchLower) ||
+          email?.includes(searchLower)
+        );
+      });
+    }
+
     return res.status(200).json({ users });
   } catch (error) {
     return res
       .status(500)
-      .json({ error: `An error occured while gettinng summary: ${error}` });
+      .json({ error: `An error occured while gettinng users: ${error}` });
   }
 });
 
@@ -263,7 +280,6 @@ router.get("/policies", verifyToken, isAdmin, async (req, res) => {
       });
     }
 
-    // Calculate days left for each policy.
     const today = new Date();
     const policiesWithDaysLeft = policies.map((policy) => {
       const endDate = new Date(policy.endDate);
@@ -385,7 +401,6 @@ router.post("/agents", verifyToken, isAdmin, async (req, res) => {
       .status(201)
       .json({ message: "Agent created successfully", agent: newAgent });
   } catch (error) {
-    console.error("Error creating agent:", error);
     res
       .status(500)
       .json({ error: `An error occurred while creating the agent: ${error}` });
@@ -398,7 +413,6 @@ router.get("/agents", verifyToken, isAdmin, async (req, res) => {
 
     res.status(200).json({ agents });
   } catch (error) {
-    console.error("Error creating agent:", error);
     res
       .status(500)
       .json({ error: `An error occurred while getting agents: ${error}` });
@@ -444,7 +458,6 @@ router.patch(
         policy: updatedPolicy,
       });
     } catch (error) {
-      console.error("Error reassigning agent:", error);
       res.status(500).json({
         error: "An error occurred while reassigning the agent.",
       });
@@ -597,5 +610,110 @@ router.patch(
     }
   }
 );
+
+router.get("/analytics/combined", verifyToken, isAdmin, async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+    const startOfNextYear = new Date(currentYear + 1, 0, 1);
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const fillMonthlyData = (aggregationResult) => {
+      const monthlyData = {};
+      for (let m = 1; m <= 12; m++) {
+        monthlyData[m] = 0;
+      }
+      aggregationResult.forEach((doc) => {
+        monthlyData[doc._id] = doc.count;
+      });
+      return monthlyData;
+    };
+
+    const usersAgg = await Users.aggregate([
+      { $match: { createdAt: { $gte: startOfYear, $lt: startOfNextYear } } },
+      { $group: { _id: { $month: "$createdAt" }, count: { $sum: 1 } } },
+    ]);
+    const usersPerMonth = fillMonthlyData(usersAgg);
+
+    const policiesAgg = await InsurancePolicy.aggregate([
+      { $match: { createdAt: { $gte: startOfYear, $lt: startOfNextYear } } },
+      { $group: { _id: { $month: "$createdAt" }, count: { $sum: 1 } } },
+    ]);
+    const policiesPerMonth = fillMonthlyData(policiesAgg);
+
+    const claimsAgg = await InsuranceClaims.aggregate([
+      { $match: { createdAt: { $gte: startOfYear, $lt: startOfNextYear } } },
+      { $group: { _id: { $month: "$createdAt" }, count: { $sum: 1 } } },
+    ]);
+    const claimsPerMonth = fillMonthlyData(claimsAgg);
+
+    const monthlyData = [];
+    for (let m = 1; m <= 12; m++) {
+      monthlyData.push({
+        name: monthNames[m - 1],
+        policies: policiesPerMonth[m],
+        claims: claimsPerMonth[m],
+        users: usersPerMonth[m],
+      });
+    }
+
+    const topUsersAgg = await InsuranceClaims.aggregate([
+      {
+        $group: {
+          _id: "$user",
+          totalClaims: { $sum: 1 },
+        },
+      },
+      { $sort: { totalClaims: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      { $unwind: "$userDetails" },
+    ]);
+
+    const insuranceTypesAgg = await InsurancePolicy.aggregate([
+      {
+        $group: {
+          _id: "$insuranceType",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const insuranceTypes = {};
+    insuranceTypesAgg.forEach((doc) => {
+      insuranceTypes[doc._id] = doc.count;
+    });
+
+    return res.status(200).json({
+      monthlyData,
+      topUsers: topUsersAgg,
+      insuranceTypes,
+    });
+  } catch (error) {
+    console.error("Error generating combined analytics:", error);
+    return res.status(500).json({
+      error: `Error generating combined analytics: ${error.message}`,
+    });
+  }
+});
 
 module.exports = router;

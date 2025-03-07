@@ -9,7 +9,6 @@ router.get("/cars", async (req, res) => {
     );
     res.json(response.data);
   } catch (error) {
-    console.error("Error fetching cars data:", error);
     res.status(500).json({ error: `Error fetching cars data: ${error}` });
   }
 });

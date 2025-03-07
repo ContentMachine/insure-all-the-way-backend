@@ -67,7 +67,6 @@ Please make sure to log in and reset your pasword
       message: "Account created. Check your email for your login details",
     });
   } catch (err) {
-    console.log("Error", err);
     res.status(500).json({ error: `Error creating user account: ${err}` });
   }
 });
@@ -143,7 +142,6 @@ router.get("/profile", verifyToken, async (req, res) => {
     }
     res.status(200).json({ user });
   } catch (error) {
-    console.error("Error retrieving user info:", error);
     res.status(500).json({ error: `Error retrieving user info:${error}` });
   }
 });

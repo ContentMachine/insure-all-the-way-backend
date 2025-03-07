@@ -386,7 +386,6 @@ router.get("/user/policy", verifyToken, async (req, res) => {
     });
     res.status(200).json({ policies });
   } catch (error) {
-    console.error("Error retrieving user policies:", error);
     res
       .status(500)
       .json({ error: "An error occurred while retrieving policies" });
@@ -406,7 +405,6 @@ router.get("/user/policy/:id", verifyToken, async (req, res) => {
 
     res.status(200).json({ policy });
   } catch (error) {
-    console.error("Error retrieving policy details:", error);
     res
       .status(500)
       .json({ error: "An error occurred while retrieving policies" });
@@ -434,7 +432,6 @@ router.get("/user/summary", verifyToken, async (req, res) => {
 
     res.status(200).json({ policiesHeld, policiesOverdue, pendingPolicies });
   } catch (error) {
-    console.error("Error retrieving policy stats:", error);
     res.status(500).json({
       error: "An error occurred while retrieving policies statistics",
     });
