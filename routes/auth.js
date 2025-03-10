@@ -75,7 +75,7 @@ router.post("/sign-in", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await Users.findOne({ email });
+    const user = await Users.findOne({ email, role: "user" });
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -116,7 +116,7 @@ router.post("/reset-password", async (req, res) => {
   try {
     const { email, newPassword } = req.body;
 
-    const user = await Users.findOne({ email });
+    const user = await Users.findOne({ email, role: "user" });
 
     if (!user) return res.status(404).json({ error: "User not found" });
 

@@ -61,9 +61,7 @@ router.post("/sign-up", async (req, res) => {
 
     await newUser.save();
 
-    const emailText =
-      // TODO: Rewrite the email, remove your website url
-      `
+    const emailText = `
 Hi ${firstName},
 
 We’re excited to inform you that your new admin account has been successfully created! You now have access to our secure admin portal, where you can manage settings, monitor activities, and oversee various administrative tasks.

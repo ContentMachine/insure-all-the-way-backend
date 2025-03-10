@@ -27,4 +27,12 @@ const isAdmin = (req, res, next) => {
   }
 };
 
-module.exports = { verifyToken, isAdmin };
+const isAgent = (req, res, next) => {
+  if (req.user && req.user.role === "agent") {
+    next();
+  } else {
+    return res.status(403).json({ error: "Forbidden. Agents only." });
+  }
+};
+
+module.exports = { verifyToken, isAdmin, isAgent };
