@@ -13,6 +13,10 @@ const UserSchema = new mongoose.Schema(
     createdAt: { type: Date, default: Date.now },
     role: { type: String, default: "user" },
     status: { type: String, default: "active" },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
   },
   { timestamps: true }
 );

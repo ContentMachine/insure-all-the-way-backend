@@ -1,10 +1,12 @@
 const express = require("express");
-const { isAgent } = require("../middleware/auth");
+const { isAgent, verifyToken } = require("../middleware/auth");
 const router = express.Router();
 const { Users } = require("../models/Users");
 const bcrypt = require("bcrypt");
 const sendEmail = require("../utils/email");
 const jwt = require("jsonwebtoken");
+const { InsurancePolicy } = require("../models/Insurance");
+const { Leads } = require("../models/Lead");
 
 router.post("/sign-up", async (req, res) => {
   try {
@@ -112,6 +114,78 @@ router.post("/sign-in", async (req, res) => {
       },
     });
   } catch (error) {}
+});
+
+router.post("/lead", verifyToken, isAgent, async (req, res) => {
+  try {
+    const agentId = req.user.id;
+
+    const { name, phone, numberPlate, email } = req.body;
+
+    if (!name || !phone || !numberPlate || !remark || !email) {
+      return res.status(400).json({ error: "All fields must be filled" });
+    }
+
+    const existingLead = await Leads.findOne({ email });
+
+    if (existingLead) {
+      if (existingLead) {
+        return res
+          .status(400)
+          .json({ error: "User with this email already exists." });
+      }
+    }
+
+    const newLead = new Leads({
+      name,
+      phone,
+      numberPlate,
+      remark,
+      email,
+      agent: agentId,
+    });
+
+    await newLead.save();
+
+    return res
+      .status(200)
+      .json({ message: "New Lead added successfully!", lead: newLead });
+  } catch (error) {}
+});
+
+router.get("/stats", isAgent, async (req, res) => {
+  try {
+    const agentId = req.user.id;
+
+    const policyCount = await InsurancePolicy.countDocuments({
+      agent: agentId,
+    });
+
+    const leadCount = await Users.countDocuments({
+      createdBy: agentId,
+      role: "lead",
+    });
+
+    const expiredPolicies = await InsurancePolicy.find({
+      agent: agentId,
+      expiryDate: { $lt: new Date() },
+    });
+
+    const convertedLeads = await User.countDocuments({
+      createdBy: agentId,
+      role: "user",
+    });
+
+    return res.json({
+      totalPolicies: policyCount,
+      totalLeads: leadCount,
+      expiredPolicies,
+      convertedLeads,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
 });
 
 module.exports = router;
