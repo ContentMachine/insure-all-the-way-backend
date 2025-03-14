@@ -9,6 +9,7 @@ const scraper = require("./routes/scraper");
 const admin = require("./routes/admin");
 const externals = require("./routes/external");
 const agent = require("./routes/agent");
+const email = require("./routes/email");
 
 // Mongo DB
 mongoose
@@ -59,6 +60,7 @@ app.use("/api/externals", externals);
 app.use("/api/admin", admin);
 app.use("/api/admin", admin);
 app.use("/api/agent", agent);
+app.use("/api/email", email);
 
 // Start server
 app.listen(PORT, () => {

@@ -157,6 +157,35 @@ router.post("/lead", verifyToken, isAgent, async (req, res) => {
   }
 });
 
+router.get("/lead", verifyToken, isAgent, async (req, res) => {
+  try {
+    const agentId = req.user.userId;
+
+    const leads = await Leads.find({ agent: agentId });
+
+    return res.status(200).json({ leads });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: `There was an error getting leads: ${error}` });
+  }
+});
+
+router.get("/lead/:id", verifyToken, isAgent, async (req, res) => {
+  try {
+    const agentId = req.user.userId;
+    const { id } = req.params;
+
+    const lead = await Leads.findOne({ agent: agentId, _id: id });
+
+    return res.status(200).json({ lead });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: `There was an error getting leads: ${error}` });
+  }
+});
+
 router.get("/stats", isAgent, async (req, res) => {
   try {
     const agentId = req.user.id;
@@ -216,10 +245,12 @@ router.get("/policies/:id", verifyToken, async (req, res) => {
     const policy = await InsurancePolicy.findOne({
       _id: id,
       agent: user,
-    }).populate({
-      path: "agent",
-      match: { role: "agent" },
-    });
+    })
+      .populate({
+        path: "agent",
+        match: { role: "agent" },
+      })
+      .populate({ path: "user" });
 
     res.status(200).json({ policy });
   } catch (error) {
