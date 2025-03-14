@@ -15,9 +15,9 @@ const InsurancePolicySchema = new mongoose.Schema(
     },
     createdAt: { type: Date, default: Date.now },
     agent: {
-      id: { type: mongoose.Schema.Types.ObjectId, required: true },
-      name: { type: String, required: true },
-      phoneNumber: { type: String, required: true },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
+      required: true,
     },
     certificate: { type: String, default: "none" },
   },

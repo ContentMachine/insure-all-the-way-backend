@@ -113,12 +113,15 @@ Best regards,
       }
 
       // Randomly select an agent using aggregation
-      const randomAgentResult = await Agent.aggregate([
+      const randomAgentResult = await Users.aggregate([
+        { $match: { role: "agent" } },
         { $sample: { size: 1 } },
       ]);
+
       if (!randomAgentResult.length) {
         return res.status(404).json({ error: "No agents found" });
       }
+
       const randomAgent = randomAgentResult[0];
 
       if (type === "motor-insurance") {
@@ -132,11 +135,7 @@ Best regards,
             status: "active",
             startDate,
             endDate,
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -186,11 +185,7 @@ Best regards,
             dateForInspection,
             contactName,
             contactPhone,
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -203,11 +198,7 @@ Best regards,
             endDate,
             registrationNumber,
             status: "active",
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -219,11 +210,7 @@ Best regards,
             startDate,
             endDate,
             status: "pending",
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -241,11 +228,7 @@ Best regards,
             startDate,
             endDate,
             status: "pending",
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -259,11 +242,7 @@ Best regards,
             startDate,
             premium,
             status: "pending",
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -278,11 +257,7 @@ Best regards,
             startDate,
             endDate,
             status: "pending",
-            agent: {
-              id: randomAgent._id,
-              name: randomAgent.name,
-              phoneNumber: randomAgent.phoneNumber,
-            },
+            agent: randomAgent?._id,
           });
 
           await insurancePolicy.save();
@@ -383,7 +358,7 @@ router.get("/user/policy", verifyToken, async (req, res) => {
     const policies = await InsurancePolicy.find({
       user: req.user.userId,
       status: "active",
-    });
+    })?.populate("agent");
     res.status(200).json({ policies });
   } catch (error) {
     res
@@ -401,13 +376,18 @@ router.get("/user/policy/:id", verifyToken, async (req, res) => {
       _id: id,
       user,
       status: "active",
+    }).populate({
+      path: "agent",
+      match: { role: "agent" },
     });
+
+    console.log(policy, "Policy");
 
     res.status(200).json({ policy });
   } catch (error) {
     res
       .status(500)
-      .json({ error: "An error occurred while retrieving policies" });
+      .json({ error: `An error occurred while retrieving policies: ${error}` });
   }
 });
 

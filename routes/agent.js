@@ -118,11 +118,11 @@ router.post("/sign-in", async (req, res) => {
 
 router.post("/lead", verifyToken, isAgent, async (req, res) => {
   try {
-    const agentId = req.user.id;
+    const agentId = req.user.userId;
 
-    const { name, phone, numberPlate, email } = req.body;
+    const { name, phone, numberPlate, email, remark } = req.body;
 
-    if (!name || !phone || !numberPlate || !remark || !email) {
+    if (!name || !phone || !numberPlate || !email) {
       return res.status(400).json({ error: "All fields must be filled" });
     }
 
@@ -150,7 +150,11 @@ router.post("/lead", verifyToken, isAgent, async (req, res) => {
     return res
       .status(200)
       .json({ message: "New Lead added successfully!", lead: newLead });
-  } catch (error) {}
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: `There was an error registering lead: ${error}` });
+  }
 });
 
 router.get("/stats", isAgent, async (req, res) => {
@@ -185,6 +189,43 @@ router.get("/stats", isAgent, async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/policies", verifyToken, async (req, res) => {
+  try {
+    const agentId = req.user.userId;
+
+    const policies = await InsurancePolicy.find({ agent: agentId }).populate(
+      "user"
+    );
+
+    return res.status(200).json({ policies });
+  } catch (error) {
+    return res.status(500).json({
+      error: `An error occurred while retrieving policies: ${error.message}`,
+    });
+  }
+});
+
+router.get("/policies/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const user = req.user?.userId;
+
+  try {
+    const policy = await InsurancePolicy.findOne({
+      _id: id,
+      agent: user,
+    }).populate({
+      path: "agent",
+      match: { role: "agent" },
+    });
+
+    res.status(200).json({ policy });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: `An error occurred while retrieving policies: ${error}` });
   }
 });
 
